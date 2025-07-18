@@ -33,7 +33,7 @@ sudo ./cc1200-hotspot-installer.sh
   - `CC1200_HAT-fw` (firmware flashing optional)
   - `rpi-dashboard` (web interface)
 - Configures NGINX and PHP-FPM to serve the dashboard
-- Provides clear next steps for user customization
+- adds a systemd service for rpi-interface
 
 ---
 
