@@ -1,7 +1,24 @@
 #!/bin/bash
+#
+# cc1200-hotspot-installer.sh - M17 Hotspot Installation Script for Raspberry Pi with CC1220 HAT
+#
+# Author: DK1MI <dk1mi@qrz.is>
+# License: GNU General Public License v3.0 (GPLv3)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+#
 
-# M17 Hotspot Installation Script for Raspberry Pi with CC1220 HAT
-# Must be run on a fresh install of Raspberry Pi OS Bookworm
 
 # ---------------- CONFIGURATION ----------------
 REQUIRED_PACKAGES="git libzmq3-dev cmake libgpiod-dev nginx php-fpm stm32flash"
@@ -177,8 +194,6 @@ EOF
 
 systemctl daemon-reexec
 systemctl daemon-reload
-systemctl enable rpi-interface.service
-systemctl start rpi-interface.service
 
 # 12. Final Instructions
 echo -e "\n✅ Setup complete!"
@@ -186,9 +201,9 @@ echo "➡️  Please manually configure your node in:"
 echo "   $M17_HOME/etc/rpi-interface.cfg"
 echo "   - Set your call sign, frequency, and other settings."
 echo "   - Set log file to: $M17_HOME/rpi-dashboard/files/log.txt"
-
-# 13. Set placeholder MOTD
-#echo "foo bar" > /etc/motd
+echo -e "\nIf you want to have rpi-interface run as a service, please execute the following commands:"
+echo "   - sudo systemctl enable rpi-interface.service"
+echo "   - sudo systemctl start rpi-interface.service"
+echo -e "\nAll newly installed M17 software can be found here: $M17_HOME"
 
 echo "🎉 All done! You can now begin using your M17 hotspot!"
-

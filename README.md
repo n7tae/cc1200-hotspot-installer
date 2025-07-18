@@ -4,7 +4,7 @@ This repository contains a Bash script to convert a Raspberry Pi (with a CC1200 
 
 ---
 
-## Usage
+## Install Script Usage
 
 Execute the following on the Raspberry Pi to download the installer:
 
@@ -33,7 +33,7 @@ sudo ./cc1200-hotspot-installer.sh
   - `CC1200_HAT-fw` (firmware flashing optional)
   - `rpi-dashboard` (web interface)
 - Configures NGINX and PHP-FPM to serve the dashboard
-- adds a systemd service for rpi-interface
+- Adds a systemd service for rpi-interface
 
 ---
 
@@ -79,6 +79,34 @@ After the script completes, **you must configure**:
 
 ---
 
+## Hotspot Usage
+
+This script builds an M17 hotspot which consists of two software components:
+
+- [rpi-interface](https://github.com/M17-Project/rpi-interface)
+- [rpi-dashboard](https://github.com/M17-Project/rpi-dashboard)
+
+Please read the manual of both software packages.
+
+To start _rpi-interface_ manually, just execute the following line (after you have adapted the config file):
+
+```
+rpi-interface -c /opt/m17/etc/rpi-interface.cfg
+```
+
+This application will connect you to the M17 reflector of your choice and writes all available info to the console.
+
+If you want to run it as a service, you can enable and start the service:
+
+```
+sudo systemctl enable rpi-interface.service
+sudo systemctl start rpi-interface.service
+```
+
+To access the dashboard, simply navigate your browser to _http://<IP_OF_YOUR_RPI>_.
+
+---
+
 ## Disclaimer
 
 This script makes **system-wide changes** and should **only be run on a clean install**. Do **not** use on a production system or one with existing services unless you know what you're doing.
@@ -93,5 +121,5 @@ For questions or issues, please contact [M17 Project](https://m17project.org/) o
 
 ## License
 
-This script is provided as-is, under the MIT License. Contributions welcome.
+This script is provided as-is, under the GPL License. Contributions welcome.
 
