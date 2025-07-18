@@ -88,10 +88,10 @@ This script builds an M17 hotspot which consists of two software components:
 
 Please read the manual of both software packages.
 
-To start _rpi-interface_ manually, just execute the following line (after you have adapted the config file):
+To start _rpi-interface_ manually, just execute the following line as the user _m17_ (after you have adapted the config file):
 
 ```
-rpi-interface -c /opt/m17/etc/rpi-interface.cfg
+sudo -u m17 rpi-interface -c /opt/m17/etc/rpi-interface.cfg
 ```
 
 This application will connect you to the M17 reflector of your choice and writes all available info to the console.
