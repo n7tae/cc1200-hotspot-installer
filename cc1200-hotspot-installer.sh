@@ -8,6 +8,7 @@ REQUIRED_PACKAGES="git libzmq3-dev cmake libgpiod-dev nginx php-fpm stm32flash"
 CONFIG_FILE="/boot/firmware/config.txt"
 M17_HOME="/opt/m17"
 M17_USER="m17"
+NGINX_DEFAULT="/etc/nginx/sites-enabled/default"
 # ------------------------------------------------
 
 set -e
@@ -55,6 +56,12 @@ if ! grep -q "^enable_uart=1" "$CONFIG_FILE"; then
     CONFIG_CHANGED=true
 fi
 
+CMDLINE_FILE="/boot/firmware/cmdline.txt"
+if grep -q "console=serial0,115200" "$CMDLINE_FILE"; then
+    sed -i 's/console=serial0,115200 *//' "$CMDLINE_FILE"
+    CONFIG_CHANGED=true
+fi
+
 if $CONFIG_CHANGED; then
     echo "⚙️  UART configuration updated. A reboot is required."
     echo "🔁 Please reboot the system and rerun this script."
@@ -74,6 +81,10 @@ echo "User '$M17_USER' created with password: $PASSWORD"
 echo "$M17_USER ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/$M17_USER"
 mkdir -p "$M17_HOME"
 chown -R "$M17_USER:$M17_USER" "$M17_HOME"
+
+# Add m17 user to the groups dialout and gpio
+usermod -aG dialout,gpio "$M17_USER"
+echo "User '$M17_USER' has been added to the 'dialout' and 'gpio' groups."
 
 # Use a subshell to switch to m17 user
 sudo -u "$M17_USER" bash <<EOF
@@ -117,32 +128,66 @@ EOF
 # 10. Configure Nginx and PHP
 echo "🛠️  Configuring nginx and PHP..."
 systemctl enable nginx
-systemctl enable php8.2-fpm || true  # may differ slightly based on system
-NGINX_DEFAULT="/etc/nginx/sites-enabled/default"
+systemctl enable php8.2-fpm || true
 
-# Enable PHP support and set root
-sed -i 's/index index.html/index index.php index.html/' "$NGINX_DEFAULT"
+sudo tee "$NGINX_DEFAULT" > /dev/null << 'EOF'
+server {
+        listen 80 default_server;
+        listen [::]:80 default_server;
 
-# Uncomment the entire PHP block
-sed -i '/location ~ \\.php\$ {/s/^#//' "$NGINX_DEFAULT"
-sed -i '/fastcgi_pass unix:\/run\/php\/php.*\.sock;/s/^#//' "$NGINX_DEFAULT"
-sed -i '/include snippets\/fastcgi-php.conf;/s/^#//' "$NGINX_DEFAULT"
-sed -i '/}/s/^#//' "$NGINX_DEFAULT"
+        root /opt/m17/rpi-dashboard;
 
-# Set correct web root
-sed -i "s|root /var/www/html;|root $M17_HOME/rpi-dashboard;|" "$NGINX_DEFAULT"
+	index index.php index.html index.htm;
+
+        server_name _;
+
+        location / {
+                try_files $uri $uri/ =404;
+        }
+
+	location ~ \.php$ {
+		include snippets/fastcgi-php.conf;
+		fastcgi_pass unix:/var/run/php/php-fpm.sock;
+        }
+}
+EOF
 
 echo "🔁 Restarting nginx..."
 systemctl restart nginx
 
-# 11. Final Instructions
+# 13. Create a systemd service for rpi-interface
+
+cat <<EOF | sudo tee /etc/systemd/system/rpi-interface.service
+[Unit]
+Description=Raspberry Pi Interface Service
+After=network.target
+
+[Service]
+Type=simple
+User=m17
+ExecStart=/usr/local/bin/rpi-interface -c /opt/m17/etc/rpi-interface.cfg
+Restart=on-failure
+StandardOutput=journal
+StandardError=journal
+LogRateLimitIntervalSec=0
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reexec
+systemctl daemon-reload
+systemctl enable rpi-interface.service
+systemctl start rpi-interface.service
+
+# 12. Final Instructions
 echo -e "\n✅ Setup complete!"
 echo "➡️  Please manually configure your node in:"
 echo "   $M17_HOME/etc/rpi-interface.cfg"
 echo "   - Set your call sign, frequency, and other settings."
 echo "   - Set log file to: $M17_HOME/rpi-dashboard/files/log.txt"
 
-# 12. Set placeholder MOTD
+# 13. Set placeholder MOTD
 #echo "foo bar" > /etc/motd
 
 echo "🎉 All done! You can now begin using your M17 hotspot!"
