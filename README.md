@@ -1,4 +1,4 @@
-# M17 Hotspot Setup Script for Raspberry Pi with CC1200 HAT
+# M17 CC1200 Hotspot Installation Script
 
 This repository contains a Bash script to convert a Raspberry Pi (with a CC1200 hat) into a fully functional **M17 digital voice hotspot**. The script automates the entire installation and setup process, including compiling the necessary software, configuring UART, setting up the web dashboard, and flashing the firmware to the CC1200 HAT (optional).
 
