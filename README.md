@@ -22,16 +22,16 @@ sudo ./cc1200-hotspot-installer.sh
 ## Features
 
 - Verifies root and OS requirements
-- Ensures it's run on a **fresh install** of Raspberry Pi OS Bookworm (64-bit)
+- Ensures it's run on a **fresh install** of Raspberry Pi OS Lite (Bookworm, 64-bit)
 - Configures UART for GPIO access
 - Prompts for required reboots after system update and boot option changes
 - Installs all necessary packages via APT
-- Creates a dedicated `m17` user for running services
+- Creates a dedicated _m17_ user for running services
 - Clones and compiles the following M17 Project repositories:
-  - `libm17`
-  - `rpi-interface`
-  - `CC1200_HAT-fw` (firmware flashing optional)
-  - `rpi-dashboard` (web interface)
+  - [libm17](https://github.com/M17-Project/libm17)
+  - [rpi-interface](https://github.com/M17-Project/rpi-interface/)
+  - [CC1200_HAT-fw](https://github.com/M17-Project/CC1200_HAT-fw) (firmware flashing optional)
+  - [rpi-dashboard](https://github.com/M17-Project/rpi-dashboard) (web interface)
 - Configures NGINX and PHP-FPM to serve the dashboard
 - Adds a systemd service for rpi-interface
 - Optionally flashes/updates the CC1200 firmware via stm32flash
