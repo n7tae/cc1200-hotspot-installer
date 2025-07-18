@@ -4,6 +4,14 @@ This repository contains a Bash script to convert a Raspberry Pi (with a CC1200 
 
 ---
 
+## Usage
+
+Execute the following on the Raspberry Pi to download and execute the installer:
+
+```
+bash <(wget -qO- https://raw.githubusercontent.com/DK1MI/cc1200-hotspot-installer/main/cc1200-hotspot-installer.sh)
+```
+
 ## Features
 
 - Verifies root and OS requirements
