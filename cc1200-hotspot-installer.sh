@@ -22,7 +22,7 @@
 
 # ---------------- CONFIGURATION ----------------
 REQUIRED_PACKAGES="git libzmq3-dev cmake libgpiod-dev nginx php-fpm stm32flash"
-CONFIG_FILE="/boot/firmware/config.txt"
+BOOT_CONFIG_FILE="/boot/firmware/config.txt"
 M17_HOME="/opt/m17"
 M17_USER="m17"
 NGINX_DEFAULT="/etc/nginx/sites-enabled/default"
@@ -63,13 +63,13 @@ fi
 # 5. Ensure UART config is correct
 CONFIG_CHANGED=false
 
-if ! grep -q "^dtoverlay=miniuart-bt" "$CONFIG_FILE"; then
-    echo "dtoverlay=miniuart-bt" >> "$CONFIG_FILE"
+if ! grep -q "^dtoverlay=miniuart-bt" "$BOOT_CONFIG_FILE"; then
+    echo "dtoverlay=miniuart-bt" >> "$BOOT_CONFIG_FILE"
     CONFIG_CHANGED=true
 fi
 
-if ! grep -q "^enable_uart=1" "$CONFIG_FILE"; then
-    echo "enable_uart=1" >> "$CONFIG_FILE"
+if ! grep -q "^enable_uart=1" "$BOOT_CONFIG_FILE"; then
+    echo "enable_uart=1" >> "$BOOT_CONFIG_FILE"
     CONFIG_CHANGED=true
 fi
 
