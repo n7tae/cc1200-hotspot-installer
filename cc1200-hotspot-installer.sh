@@ -21,7 +21,7 @@
 
 
 # ---------------- CONFIGURATION ----------------
-REQUIRED_PACKAGES="git libzmq3-dev cmake libgpiod-dev nginx php-fpm stm32flash"
+REQUIRED_PACKAGES="git libzmq3-dev cmake libgpiod-dev nginx php-fpm stm32flash jq"
 BOOT_CONFIG_FILE="/boot/firmware/config.txt"
 M17_HOME="/opt/m17"
 M17_USER="m17"
@@ -114,15 +114,6 @@ cmake -DCMAKE_INSTALL_PREFIX=/usr -B build
 cmake --build build
 sudo cmake --install build
 
-echo "📥 Cloning rpi-interface..."
-cd "$M17_HOME"
-git clone https://github.com/M17-Project/rpi-interface.git
-cd rpi-interface
-make
-sudo make install
-mkdir -p "$M17_HOME/etc"
-cp default_cfg.txt "$M17_HOME/etc/rpi-interface.cfg"
-
 echo "📥 Cloning CC1200_HAT-fw..."
 cd "$M17_HOME"
 git clone https://github.com/M17-Project/CC1200_HAT-fw.git
@@ -172,38 +163,39 @@ EOF
 echo "🔁 Restarting nginx..."
 systemctl restart nginx
 
-# 13. Create a systemd service for rpi-interface
+# 11. Install M17 Gateway and configure links
+echo "📥 Downloading and installing m17-gateway..."
+wget -O /tmp/m17-gateway.deb https://github.com/jancona/m17/releases/download/v0.1.12/m17-gateway_0.1.12_arm64.deb
+dpkg -i /tmp/m17-gateway.deb
 
-cat <<EOF | sudo tee /etc/systemd/system/rpi-interface.service
-[Unit]
-Description=Raspberry Pi Interface Service
-After=network.target
+echo "👥 Adding 'www-data' to 'm17-gateway-control' group..."
+usermod -aG m17-gateway-control www-data
+usermod -aG m17-gateway www-data
 
-[Service]
-Type=simple
-User=m17
-ExecStart=/usr/local/bin/rpi-interface -c /opt/m17/etc/rpi-interface.cfg
-Restart=on-failure
-StandardOutput=journal
-StandardError=journal
-LogRateLimitIntervalSec=0
+echo "Copying /etc/m17-gateway.cfg..."
+sudo cp /etc/m17-gateway.ini.sample /etc/m17-gateway.ini
 
-[Install]
-WantedBy=multi-user.target
-EOF
+echo "Setting file system permissions..."
+sudo chown m17-gateway:m17-gateway-control /etc/m17-gateway.ini
+sudo chmod g+rw /etc/m17-gateway.ini
+sudo chmod g+rw /opt/m17/m17-gateway/M17Hosts.txt
+sudo chmod g+rw /opt/m17/m17-gateway/OverrideHosts.txt
+sudo chmod g+rw /opt/m17/m17-gateway/dashboard.log
 
-systemctl daemon-reexec
-systemctl daemon-reload
+echo "🔗 Creating symlinks to expose gateway data to dashboard..."
+ln -sf /opt/m17/m17-gateway/M17Hosts.txt /opt/m17/rpi-dashboard/files/M17Hosts.txt
+ln -sf /opt/m17/m17-gateway/OverrideHosts.txt /opt/m17/rpi-dashboard/files/OverrideHosts.txt
+ln -sf /opt/m17/m17-gateway/dashboard.log /opt/m17/rpi-dashboard/files/dashboard.log
+ln -sf /etc/m17-gateway.ini /opt/m17/rpi-dashboard/files/m17-gateway.ini
 
 # 12. Final Instructions
 echo -e "\n✅ Setup complete!"
 echo "➡️  Please manually configure your node in:"
-echo "   $M17_HOME/etc/rpi-interface.cfg"
+echo "   $M17_HOME/etc/m17-gateway.cfg"
 echo "   - Set your call sign, frequency, and other settings."
 echo "   - Set log file to: $M17_HOME/rpi-dashboard/files/log.txt"
-echo -e "\nIf you want to have rpi-interface run as a service, please execute the following commands:"
-echo "   - sudo systemctl enable rpi-interface.service"
-echo "   - sudo systemctl start rpi-interface.service"
+echo -e "\nTo start/stop/restart m17-gateway, please execute the following commands:"
+echo "   - sudo systemctl start/stop/restart m17-gateway.service"
 echo -e "\nAll newly installed M17 software can be found here: $M17_HOME"
 
 echo "🎉 All done! You can now begin using your M17 hotspot!"
