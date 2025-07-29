@@ -131,7 +131,6 @@ sudo -u "$M17_USER" bash <<EOF
 cd "$M17_HOME"
 echo "📥 Cloning rpi-dashboard..."
 git clone https://github.com/M17-Project/rpi-dashboard
-git checkout -b dev --track origin/dev
 EOF
 
 # 10. Configure Nginx and PHP
