@@ -203,4 +203,4 @@ echo -e "\nTo start/stop/restart m17-gateway, please execute the following comma
 echo "   - sudo systemctl start/stop/restart m17-gateway.service"
 echo -e "\nAll newly installed M17 software can be found here: $M17_HOME"
 
-echo "🎉 All done! You can now begin using your M17 hotspot!"
+echo "🎉 All done! PLEASE REBOOT YOUR RASPBERRY NOW!"
