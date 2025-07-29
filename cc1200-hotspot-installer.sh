@@ -191,7 +191,7 @@ sudo sed \
 sudo cp /tmp/m17-gateway.ini /etc/m17-gateway.ini
 
 echo "🔗 Creating symlinks to expose gateway data to dashboard..."
-ln -sf /opt/m17/m17-gateway/dashboard.log /opt/m17/rpi-dashboard/files/log.txt
+ln -sf /opt/m17/m17-gateway/dashboard.log /opt/m17/rpi-dashboard/files/dashboard.log
 ln -sf /etc/m17-gateway.ini /opt/m17/rpi-dashboard/files/m17-gateway.ini
 
 # 12. Final Instructions
