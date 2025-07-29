@@ -29,11 +29,10 @@ sudo ./cc1200-hotspot-installer.sh
 - Creates a dedicated _m17_ user for running services
 - Clones and compiles the following M17 Project repositories:
   - [libm17](https://github.com/M17-Project/libm17)
-  - [rpi-interface](https://github.com/M17-Project/rpi-interface/)
   - [CC1200_HAT-fw](https://github.com/M17-Project/CC1200_HAT-fw) (firmware flashing optional)
   - [rpi-dashboard](https://github.com/M17-Project/rpi-dashboard) (web interface)
+- Installs [m17-gateway](https://github.com/jancona/m17)
 - Configures NGINX and PHP-FPM to serve the dashboard
-- Adds a systemd service for rpi-interface
 - Optionally flashes/updates the CC1200 firmware via stm32flash
 
 ---
@@ -58,24 +57,12 @@ Other Pi models or OS versions may work but are **not officially supported**.
 
 ---
 
-## Manual Configuration (After Setup)
-
-After the script completes, **you must configure**:
-
-- `/opt/m17/etc/rpi-interface.cfg`
-  - Set your **call sign**, **frequency**, and **transmit settings**
-  - Update the log path:
-    ```ini
-    log_file=/opt/m17/rpi-dashboard/files/log.txt
-    ```
-
----
-
 ## File Summary
 
 - `/opt/m17/` - Main working directory for M17-related repositories
 - `/opt/m17/rpi-dashboard/` - Web interface root (served by NGINX)
-- `/opt/m17/etc/rpi-interface.cfg` - Main configuration file
+- `/opt/m17/m17-gateway/` - m17-gateway installation root
+- `/etc/rpi-gateway.ini` - Gateway configuration file
 - `/boot/firmware/config.txt` - UART settings applied here
 
 ---
@@ -89,20 +76,13 @@ This script builds an M17 hotspot which consists of two software components:
 
 Please read the manual of both software packages.
 
-To start _rpi-interface_ manually, just execute the following line as the user _m17_ (after you have adapted the config file):
+To start _m17-gateway_ manually, just execute the following line:
 
 ```
-sudo -u m17 rpi-interface -c /opt/m17/etc/rpi-interface.cfg
+sudo systemctl start m17-gateway.service
 ```
 
-This application will connect you to the M17 reflector of your choice and writes all available info to the console.
-
-If you want to run it as a service, you can enable and start the service:
-
-```
-sudo systemctl enable rpi-interface.service
-sudo systemctl start rpi-interface.service
-```
+This service will connect you to the M17 reflector of your choice and writes all available info to the console.
 
 To access the dashboard, simply navigate your browser to _http://<IP_OF_YOUR_RPI>_.
 
