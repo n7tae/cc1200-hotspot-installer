@@ -165,35 +165,40 @@ systemctl restart nginx
 
 # 11. Install M17 Gateway and configure links
 echo "📥 Downloading and installing m17-gateway..."
-wget -O /tmp/m17-gateway.deb https://github.com/jancona/m17/releases/download/v0.1.12/m17-gateway_0.1.12_arm64.deb
+wget -O /tmp/m17-gateway.deb https://github.com/jancona/m17/releases/download/v0.1.13/m17-gateway_0.1.13_arm64.deb
 dpkg -i /tmp/m17-gateway.deb
 
 echo "👥 Adding 'www-data' to 'm17-gateway-control' group..."
 usermod -aG m17-gateway-control www-data
-usermod -aG m17-gateway www-data
 
-echo "Copying /etc/m17-gateway.cfg..."
-sudo cp /etc/m17-gateway.ini.sample /etc/m17-gateway.ini
+echo "🚚 Moving host files to dashboard..."
+if [ ! -f /opt/m17/rpi-dashboard/files/M17Hosts.txt ]; then
+    sudo mv /opt/m17/m17-gateway/M17Hosts.txt /opt/m17/rpi-dashboard/files/
+    sudo chown m17:m17 /opt/m17/rpi-dashboard/files/M17Hosts.txt
+    sudo chmod 644 /opt/m17/rpi-dashboard/files/M17Hosts.txt
+fi
+if [ ! -f /opt/m17/rpi-dashboard/files/OverrideHosts.txt ]; then
+    sudo mv /opt/m17/m17-gateway/OverrideHosts.txt /opt/m17/rpi-dashboard/files/
+    sudo chown m17:m17 /opt/m17/rpi-dashboard/files/OverrideHosts.txt
+    sudo chmod 644 /opt/m17/rpi-dashboard/files/OverrideHosts.txt
+fi
 
-echo "Setting file system permissions..."
-sudo chown m17-gateway:m17-gateway-control /etc/m17-gateway.ini
-sudo chmod g+rw /etc/m17-gateway.ini
-sudo chmod g+rw /opt/m17/m17-gateway/M17Hosts.txt
-sudo chmod g+rw /opt/m17/m17-gateway/OverrideHosts.txt
-sudo chmod g+rw /opt/m17/m17-gateway/dashboard.log
+echo "Updating m17-gateway.ini..."
+sudo sed \
+    -e 's|HostFile=/opt/m17/m17-gateway/M17Hosts.txt|HostFile=/opt/m17/rpi-dashboard/files/M17Hosts.txt|g' \
+    -e 's|OverrideHostFile=/opt/m17/m17-gateway/OverrideHosts.txt|OverrideHostFile=/opt/m17/rpi-dashboard/files/OverrideHosts.txt|g' \
+    /etc/m17-gateway.ini > /tmp/m17-gateway.ini
+sudo cp /tmp/m17-gateway.ini /etc/m17-gateway.ini
 
 echo "🔗 Creating symlinks to expose gateway data to dashboard..."
-ln -sf /opt/m17/m17-gateway/M17Hosts.txt /opt/m17/rpi-dashboard/files/M17Hosts.txt
-ln -sf /opt/m17/m17-gateway/OverrideHosts.txt /opt/m17/rpi-dashboard/files/OverrideHosts.txt
 ln -sf /opt/m17/m17-gateway/dashboard.log /opt/m17/rpi-dashboard/files/dashboard.log
 ln -sf /etc/m17-gateway.ini /opt/m17/rpi-dashboard/files/m17-gateway.ini
 
 # 12. Final Instructions
 echo -e "\n✅ Setup complete!"
 echo "➡️  Please manually configure your node in:"
-echo "   $M17_HOME/etc/m17-gateway.cfg"
+echo "   $M17_HOME/etc/m17-gateway.ini"
 echo "   - Set your call sign, frequency, and other settings."
-echo "   - Set log file to: $M17_HOME/rpi-dashboard/files/log.txt"
 echo -e "\nTo start/stop/restart m17-gateway, please execute the following commands:"
 echo "   - sudo systemctl start/stop/restart m17-gateway.service"
 echo -e "\nAll newly installed M17 software can be found here: $M17_HOME"
