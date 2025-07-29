@@ -131,6 +131,7 @@ sudo -u "$M17_USER" bash <<EOF
 cd "$M17_HOME"
 echo "📥 Cloning rpi-dashboard..."
 git clone https://github.com/M17-Project/rpi-dashboard
+git checkout -b dev --track origin/dev
 EOF
 
 # 10. Configure Nginx and PHP
@@ -172,12 +173,16 @@ echo "👥 Adding 'www-data' to 'm17-gateway-control' group..."
 usermod -aG m17-gateway-control www-data
 
 echo "🚚 Moving host files to dashboard..."
-sudo mv /opt/m17/m17-gateway/M17Hosts.txt /opt/m17/rpi-dashboard/files/
-sudo mv /opt/m17/m17-gateway/OverrideHosts.txt /opt/m17/rpi-dashboard/files/
-sudo chown m17:m17 /opt/m17/rpi-dashboard/files/M17Hosts.txt
-sudo chown m17:m17 /opt/m17/rpi-dashboard/files/OverrideHosts.txt
-sudo chmod 644 /opt/m17/rpi-dashboard/files/M17Hosts.txt
-sudo chmod 644 /opt/m17/rpi-dashboard/files/OverrideHosts.txt
+if [ ! -f /opt/m17/rpi-dashboard/files/M17Hosts.txt ]; then
+    sudo mv /opt/m17/m17-gateway/M17Hosts.txt /opt/m17/rpi-dashboard/files/
+    sudo chown m17:m17 /opt/m17/rpi-dashboard/files/M17Hosts.txt
+    sudo chmod 644 /opt/m17/rpi-dashboard/files/M17Hosts.txt
+fi
+if [ ! -f /opt/m17/rpi-dashboard/files/OverrideHosts.txt ]; then
+    sudo mv /opt/m17/m17-gateway/OverrideHosts.txt /opt/m17/rpi-dashboard/files/
+    sudo chown m17:m17 /opt/m17/rpi-dashboard/files/OverrideHosts.txt
+    sudo chmod 644 /opt/m17/rpi-dashboard/files/OverrideHosts.txt
+fi
 
 echo "Updating m17-gateway.ini..."
 sudo sed \
@@ -187,13 +192,13 @@ sudo sed \
 sudo cp /tmp/m17-gateway.ini /etc/m17-gateway.ini
 
 echo "🔗 Creating symlinks to expose gateway data to dashboard..."
-ln -sf /opt/m17/m17-gateway/dashboard.log /opt/m17/rpi-dashboard/files/dashboard.log
-# ln -sf /etc/m17-gateway.ini /opt/m17/rpi-dashboard/files/m17-gateway.ini
+ln -sf /opt/m17/m17-gateway/dashboard.log /opt/m17/rpi-dashboard/files/log.txt
+ln -sf /etc/m17-gateway.ini /opt/m17/rpi-dashboard/files/m17-gateway.ini
 
 # 12. Final Instructions
 echo -e "\n✅ Setup complete!"
 echo "➡️  Please manually configure your node in:"
-echo "   $M17_HOME/etc/m17-gateway.cfg"
+echo "   $M17_HOME/etc/m17-gateway.ini"
 echo "   - Set your call sign, frequency, and other settings."
 echo -e "\nTo start/stop/restart m17-gateway, please execute the following commands:"
 echo "   - sudo systemctl start/stop/restart m17-gateway.service"
