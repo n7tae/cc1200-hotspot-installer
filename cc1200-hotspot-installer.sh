@@ -144,6 +144,7 @@ server {
         listen [::]:80 default_server;
 
         root /opt/m17/rpi-dashboard;
+        access_log off;
 
 	index index.php index.html index.htm;
 
