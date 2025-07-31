@@ -167,7 +167,6 @@ systemctl restart nginx
 # 11. Install M17 Gateway and configure links
 echo "📥 Downloading and installing m17-gateway..."
 curl -s https://api.github.com/repos/jancona/m17/releases/latest | jq -r '.assets[].browser_download_url | select(. | contains("_arm64.deb") and contains("m17-gateway"))' | xargs -I {} curl -L -o /tmp/m17-gateway.deb {}
-#wget -O /tmp/m17-gateway.deb https://github.com/jancona/m17/releases/download/v0.1.13/m17-gateway_0.1.13_arm64.deb
 dpkg -i /tmp/m17-gateway.deb
 
 echo "👥 Adding 'www-data' to 'm17-gateway-control' group..."
@@ -184,6 +183,10 @@ if [ ! -f /opt/m17/rpi-dashboard/files/OverrideHosts.txt ]; then
     sudo chown m17:m17 /opt/m17/rpi-dashboard/files/OverrideHosts.txt
     sudo chmod 644 /opt/m17/rpi-dashboard/files/OverrideHosts.txt
 fi
+
+echo "Making /opt/m17/rpi-dashboard/ writable for www-data..."
+chgrp www-data /opt/m17/rpi-dashboard/
+chmod g+w /opt/m17/rpi-dashboard/
 
 echo "Updating m17-gateway.ini..."
 sudo sed \
