@@ -18,23 +18,112 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
-
-
 # ---------------- CONFIGURATION ----------------
 REQUIRED_PACKAGES="git libzmq3-dev cmake libgpiod-dev nginx php-fpm stm32flash jq"
 BOOT_CONFIG_FILE="/boot/firmware/config.txt"
 M17_HOME="/opt/m17"
 M17_USER="m17"
 NGINX_DEFAULT="/etc/nginx/sites-enabled/default"
+CMDLINE_FILE="/boot/firmware/cmdline.txt"
 # ------------------------------------------------
 
 set -e
+
+show_menu() {
+    echo "Please select an action:"
+    echo "1) Install (Fresh setup)"
+    echo "2) Update (Pull latest software)"
+    echo "3) Repair (Fix permissions, groups, symlinks)"
+    read -rp "Enter your choice (1/2/3): " MODE
+}
+
+run_update() {
+    echo "🔄 Updating software as $M17_USER..."
+
+    sudo -u "$M17_USER" bash <<EOF
+set -e
+cd "$M17_HOME/libm17"
+echo "📥 Updating libm17..."
+git pull
+cmake -DCMAKE_INSTALL_PREFIX=/usr -B build
+cmake --build build
+sudo cmake --install build
+
+cd "$M17_HOME/CC1200_HAT-fw"
+echo "📥 Updating CC1200_HAT-fw..."
+git pull
+
+cd "$M17_HOME/rpi-dashboard"
+echo "📥 Updating rpi-dashboard..."
+git pull
+EOF
+
+    echo "📥 Updating m17-gateway..."
+    curl -s https://api.github.com/repos/jancona/m17/releases/latest \
+        | jq -r '.assets[].browser_download_url | select(. | contains("_arm64.deb") and contains("m17-gateway"))' \
+        | xargs -I {} curl -L -o /tmp/m17-gateway.deb {}
+
+    dpkg -i /tmp/m17-gateway.deb
+
+    echo "✅ Update complete!"
+    exit 0
+}
+
+run_repair() {
+    echo "🔧 Repairing permissions and symlinks..."
+
+    echo "👥 Ensuring group memberships..."
+    usermod -aG dialout,gpio "$M17_USER"
+    usermod -aG m17-gateway-control www-data
+
+    echo "🔗 Fixing symlinks..."
+    ln -sf $M17_HOME/m17-gateway/dashboard.log $M17_HOME/rpi-dashboard/files/dashboard.log
+    ln -sf /etc/m17-gateway.ini $M17_HOME/rpi-dashboard/files/m17-gateway.ini
+
+    echo "🔐 Fixing permissions and ownerships..."
+    chgrp www-data $M17_HOME/rpi-dashboard/
+    chmod g+w $M17_HOME/rpi-dashboard/
+    chown -R m17-gateway:m17-gateway $M17_HOME/m17-gateway
+    chmod 644 $M17_HOME/m17-gateway/dashboard.log
+
+    if [ -f $M17_HOME/rpi-dashboard/files/M17Hosts.txt ]; then
+        chown "$M17_USER:$M17_USER" $M17_HOME/rpi-dashboard/files/M17Hosts.txt
+        chmod 644 $M17_HOME/rpi-dashboard/files/M17Hosts.txt
+    fi
+
+    if [ -f $M17_HOME/rpi-dashboard/files/OverrideHosts.txt ]; then
+        chown "$M17_USER:$M17_USER" $M17_HOME/rpi-dashboard/files/OverrideHosts.txt
+        chmod 644 $M17_HOME/rpi-dashboard/files/OverrideHosts.txt
+    fi
+
+    echo "✅ Repair complete!"
+    exit 0
+}
 
 # 1. Must be run as root
 if [[ $EUID -ne 0 ]]; then
     echo "❌ This script must be run as root. Please use sudo."
     exit 1
 fi
+
+show_menu
+
+case "$MODE" in
+    1)
+        echo "🛠️ Proceeding with INSTALL..."
+        ;; # Let the script continue normally for full install
+    2)
+        run_update
+        ;;
+    3)
+        run_repair
+        ;;
+    *)
+        echo "❌ Invalid choice. Exiting."
+        exit 1
+        ;;
+esac
+
 
 # 2. Check for Raspberry Pi OS Bookworm
 if ! grep -q "bookworm" /etc/os-release; then
@@ -56,7 +145,7 @@ apt update && apt -y dist-upgrade
 
 if [ -f /var/run/reboot-required ]; then
     echo "🔁 A system reboot is required to continue."
-    echo "ℹ️  Please reboot the system and rerun this script."
+    echo "ℹ️  Please reboot the system, rerun this script and select 1) (Fresh Setup) again."
     exit 0
 fi
 
@@ -73,7 +162,6 @@ if ! grep -q "^enable_uart=1" "$BOOT_CONFIG_FILE"; then
     CONFIG_CHANGED=true
 fi
 
-CMDLINE_FILE="/boot/firmware/cmdline.txt"
 if grep -q "console=serial0,115200" "$CMDLINE_FILE"; then
     sed -i 's/console=serial0,115200 *//' "$CMDLINE_FILE"
     CONFIG_CHANGED=true
@@ -138,7 +226,7 @@ echo "🛠️  Configuring nginx and PHP..."
 systemctl enable nginx
 systemctl enable php8.2-fpm || true
 
-sudo tee "$NGINX_DEFAULT" > /dev/null << 'EOF'
+tee "$NGINX_DEFAULT" > /dev/null << 'EOF'
 server {
         listen 80 default_server;
         listen [::]:80 default_server;
@@ -146,7 +234,7 @@ server {
         root /opt/m17/rpi-dashboard;
         access_log off;
 
-	index index.php index.html index.htm;
+    index index.php index.html index.htm;
 
         server_name _;
 
@@ -154,9 +242,9 @@ server {
                 try_files $uri $uri/ =404;
         }
 
-	location ~ \.php$ {
-		include snippets/fastcgi-php.conf;
-		fastcgi_pass unix:/var/run/php/php-fpm.sock;
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php-fpm.sock;
         }
 }
 EOF
@@ -174,14 +262,14 @@ usermod -aG m17-gateway-control www-data
 
 echo "🚚 Moving host files to dashboard..."
 if [ ! -f /opt/m17/rpi-dashboard/files/M17Hosts.txt ]; then
-    sudo mv /opt/m17/m17-gateway/M17Hosts.txt /opt/m17/rpi-dashboard/files/
-    sudo chown m17:m17 /opt/m17/rpi-dashboard/files/M17Hosts.txt
-    sudo chmod 644 /opt/m17/rpi-dashboard/files/M17Hosts.txt
+    mv /opt/m17/m17-gateway/M17Hosts.txt /opt/m17/rpi-dashboard/files/
+    chown m17:m17 /opt/m17/rpi-dashboard/files/M17Hosts.txt
+    chmod 644 /opt/m17/rpi-dashboard/files/M17Hosts.txt
 fi
 if [ ! -f /opt/m17/rpi-dashboard/files/OverrideHosts.txt ]; then
-    sudo mv /opt/m17/m17-gateway/OverrideHosts.txt /opt/m17/rpi-dashboard/files/
-    sudo chown m17:m17 /opt/m17/rpi-dashboard/files/OverrideHosts.txt
-    sudo chmod 644 /opt/m17/rpi-dashboard/files/OverrideHosts.txt
+    mv /opt/m17/m17-gateway/OverrideHosts.txt /opt/m17/rpi-dashboard/files/
+    chown m17:m17 /opt/m17/rpi-dashboard/files/OverrideHosts.txt
+    chmod 644 /opt/m17/rpi-dashboard/files/OverrideHosts.txt
 fi
 
 echo "Making /opt/m17/rpi-dashboard/ writable for www-data..."
@@ -189,11 +277,11 @@ chgrp www-data /opt/m17/rpi-dashboard/
 chmod g+w /opt/m17/rpi-dashboard/
 
 echo "Updating m17-gateway.ini..."
-sudo sed \
+sed \
     -e 's|HostFile=/opt/m17/m17-gateway/M17Hosts.txt|HostFile=/opt/m17/rpi-dashboard/files/M17Hosts.txt|g' \
     -e 's|OverrideHostFile=/opt/m17/m17-gateway/OverrideHosts.txt|OverrideHostFile=/opt/m17/rpi-dashboard/files/OverrideHosts.txt|g' \
     /etc/m17-gateway.ini > /tmp/m17-gateway.ini
-sudo cp /tmp/m17-gateway.ini /etc/m17-gateway.ini
+cp /tmp/m17-gateway.ini /etc/m17-gateway.ini
 
 echo "🔗 Creating symlinks to expose gateway data to dashboard..."
 ln -sf /opt/m17/m17-gateway/dashboard.log /opt/m17/rpi-dashboard/files/dashboard.log
