@@ -63,7 +63,11 @@ EOF
         | jq -r '.assets[].browser_download_url | select(. | contains("_arm64.deb") and contains("m17-gateway"))' \
         | xargs -I {} curl -L -o /tmp/m17-gateway.deb {}
 
+    systemctl stop m17-gateway.service
+
     dpkg -i /tmp/m17-gateway.deb
+
+    systemctl start m17-gateway.service
 
     echo "✅ Update complete!"
     exit 0
