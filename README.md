@@ -71,7 +71,7 @@ Other Pi models or OS versions may work but are **not officially supported**.
 
 This script builds an M17 hotspot which consists of two software components:
 
-- [rpi-interface](https://github.com/M17-Project/rpi-interface)
+- [rpi-gateway](https://github.com/jancona/m17)
 - [rpi-dashboard](https://github.com/M17-Project/rpi-dashboard)
 
 Please read the manual of both software packages.
