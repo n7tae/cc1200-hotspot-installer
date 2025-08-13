@@ -25,6 +25,7 @@ M17_HOME="/opt/m17"
 M17_USER="m17"
 NGINX_DEFAULT="/etc/nginx/sites-enabled/default"
 CMDLINE_FILE="/boot/firmware/cmdline.txt"
+HOSTFILE_URL="https://hostfiles.refcheck.radio/M17Hosts.txt"
 # ------------------------------------------------
 
 set -e
@@ -35,6 +36,24 @@ show_menu() {
     echo "2) Update (Pull latest software)"
     echo "3) Repair (Fix permissions, groups, symlinks)"
     read -rp "Enter your choice (1/2/3): " MODE
+}
+
+update_hostfile() {
+    echo "Now taking care of the M17 Hostfile..."
+
+    M17_HOSTS="$M17_HOME/rpi-dashboard/files/M17Hosts.txt"
+
+    echo "Deleting $M17_HOSTS"
+    rm -f $M17_HOSTS
+
+    echo "Downloading hostfile to $M17_HOSTS"
+    /usr/bin/curl $HOSTFILE_URL -o $M17_HOSTS -A "rpi-dashboard Hostfile Updater"
+
+    echo "Setting ownership and permissions of $M17_HOSTS"
+    if [ -f $M17_HOME/rpi-dashboard/files/M17Hosts.txt ]; then
+        chown "$M17_USER:www-data" $M17_HOSTS
+        chmod 664 $M17_HOSTS
+    fi
 }
 
 run_update() {
@@ -57,6 +76,8 @@ cd "$M17_HOME/rpi-dashboard"
 echo "📥 Updating rpi-dashboard..."
 git pull
 EOF
+
+    update_hostfile
 
     echo "📥 Updating m17-gateway..."
     curl -s https://api.github.com/repos/jancona/m17/releases/latest \
@@ -90,10 +111,7 @@ run_repair() {
     chown -R m17-gateway:m17-gateway $M17_HOME/m17-gateway
     chmod 644 $M17_HOME/m17-gateway/dashboard.log
 
-    if [ -f $M17_HOME/rpi-dashboard/files/M17Hosts.txt ]; then
-        chown "$M17_USER:www-data" $M17_HOME/rpi-dashboard/files/M17Hosts.txt
-        chmod 664 $M17_HOME/rpi-dashboard/files/M17Hosts.txt
-    fi
+    update_hostfile
 
     if [ -f $M17_HOME/rpi-dashboard/files/OverrideHosts.txt ]; then
         chown "$M17_USER:www-data" $M17_HOME/rpi-dashboard/files/OverrideHosts.txt
@@ -225,6 +243,8 @@ echo "📥 Cloning rpi-dashboard..."
 git clone https://github.com/M17-Project/rpi-dashboard
 EOF
 
+update_hostfile
+
 # 10. Configure Nginx and PHP
 echo "🛠️  Configuring nginx and PHP..."
 systemctl enable nginx
@@ -265,15 +285,15 @@ echo "👥 Adding 'www-data' to 'm17-gateway-control' group..."
 usermod -aG m17-gateway-control www-data
 
 echo "🚚 Moving host files to dashboard..."
-if [ ! -f /opt/m17/rpi-dashboard/files/M17Hosts.txt ]; then
-    mv /opt/m17/m17-gateway/M17Hosts.txt /opt/m17/rpi-dashboard/files/
-    chown m17:m17 /opt/m17/rpi-dashboard/files/M17Hosts.txt
-    chmod 644 /opt/m17/rpi-dashboard/files/M17Hosts.txt
-fi
+#if [ ! -f /opt/m17/rpi-dashboard/files/M17Hosts.txt ]; then
+#   mv /opt/m17/m17-gateway/M17Hosts.txt /opt/m17/rpi-dashboard/files/
+#   chown m17:www-data /opt/m17/rpi-dashboard/files/M17Hosts.txt
+#   chmod 664 /opt/m17/rpi-dashboard/files/M17Hosts.txt
+#
 if [ ! -f /opt/m17/rpi-dashboard/files/OverrideHosts.txt ]; then
     mv /opt/m17/m17-gateway/OverrideHosts.txt /opt/m17/rpi-dashboard/files/
-    chown m17:m17 /opt/m17/rpi-dashboard/files/OverrideHosts.txt
-    chmod 644 /opt/m17/rpi-dashboard/files/OverrideHosts.txt
+    chown m17:www-data /opt/m17/rpi-dashboard/files/OverrideHosts.txt
+    chmod 664 /opt/m17/rpi-dashboard/files/OverrideHosts.txt
 fi
 
 echo "Making /opt/m17/rpi-dashboard/ writable for www-data..."
