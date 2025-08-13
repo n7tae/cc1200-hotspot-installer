@@ -91,13 +91,13 @@ run_repair() {
     chmod 644 $M17_HOME/m17-gateway/dashboard.log
 
     if [ -f $M17_HOME/rpi-dashboard/files/M17Hosts.txt ]; then
-        chown "$M17_USER:$M17_USER" $M17_HOME/rpi-dashboard/files/M17Hosts.txt
-        chmod 644 $M17_HOME/rpi-dashboard/files/M17Hosts.txt
+        chown "$M17_USER:www-data" $M17_HOME/rpi-dashboard/files/M17Hosts.txt
+        chmod 664 $M17_HOME/rpi-dashboard/files/M17Hosts.txt
     fi
 
     if [ -f $M17_HOME/rpi-dashboard/files/OverrideHosts.txt ]; then
-        chown "$M17_USER:$M17_USER" $M17_HOME/rpi-dashboard/files/OverrideHosts.txt
-        chmod 644 $M17_HOME/rpi-dashboard/files/OverrideHosts.txt
+        chown "$M17_USER:www-data" $M17_HOME/rpi-dashboard/files/OverrideHosts.txt
+        chmod 664 $M17_HOME/rpi-dashboard/files/OverrideHosts.txt
     fi
 
     echo "✅ Repair complete!"
