@@ -41,10 +41,17 @@ show_menu() {
 update_hostfile() {
     echo "Now taking care of the M17 Hostfile..."
 
-    M17_HOSTS="$M17_HOME/rpi-dashboard/files/M17Hosts.txt"
+    FILES_DIR="$M17_HOME/rpi-dashboard/files"
+    M17_HOSTS="$FILES_DIR/M17Hosts.txt"
 
     echo "Deleting $M17_HOSTS"
     rm -f $M17_HOSTS
+
+    if [ ! -d "$FILES_DIR" ]; then
+        mkdir -p "$FILES_DIR"
+    fi
+    chown "$M17_USER:www-data" $FILES_DIR
+    chmod 775 $FILES_DIR
 
     echo "Downloading hostfile to $M17_HOSTS"
     /usr/bin/curl $HOSTFILE_URL -o $M17_HOSTS -A "rpi-dashboard Hostfile Updater"
