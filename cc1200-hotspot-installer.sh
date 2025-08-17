@@ -318,13 +318,10 @@ echo "🔗 Creating symlinks to expose gateway data to dashboard..."
 ln -sf /opt/m17/m17-gateway/dashboard.log /opt/m17/rpi-dashboard/files/dashboard.log
 ln -sf /etc/m17-gateway.ini /opt/m17/rpi-dashboard/files/m17-gateway.ini
 
-# 12. Final Instructions
-echo -e "\n✅ Setup complete!"
-echo "➡️  Please manually configure your node in:"
-echo "   $M17_HOME/etc/m17-gateway.ini"
-echo "   - Set your call sign, frequency, and other settings."
-echo -e "\nTo start/stop/restart m17-gateway, please execute the following commands:"
-echo "   - sudo systemctl start/stop/restart m17-gateway.service"
-echo -e "\nAll newly installed M17 software can be found here: $M17_HOME"
+IP_ADDRESS=$(hostname -I | awk '{print $1}')
 
-echo "🎉 All done! PLEASE REBOOT YOUR RASPBERRY NOW!"
+# 12. Final Instructions
+echo -e "\n🎉 All done! PLEASE REBOOT YOUR RASPBERRY NOW!"
+echo -e "\nAfter the reboot, open your browser and go to: http://$IP_ADDRESS/"
+echo -e "\nThere, click on 'Gateway Config' to configure your node (call sign, frequency etc)."
+echo -e "You will find further information under 'Help' in the dashboard."
