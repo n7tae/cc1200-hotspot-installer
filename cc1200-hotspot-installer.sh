@@ -155,8 +155,8 @@ esac
 
 
 # 2. Check for Raspberry Pi OS Bookworm
-if ! grep -q "bookworm" /etc/os-release; then
-    echo "❌ This script is intended for Raspberry Pi OS Bookworm only."
+if ! grep -q "bookworm\|trixie" /etc/os-release; then
+    echo "❌ This script is intended for Raspberry Pi OS Bookworm or Trixie only."
     exit 1
 fi
 
@@ -255,7 +255,11 @@ update_hostfile
 # 10. Configure Nginx and PHP
 echo "🛠️  Configuring nginx and PHP..."
 systemctl enable nginx
-systemctl enable php8.2-fpm || true
+if grep -q "bookworm" /etc/os-release; then
+	systemctl enable php8.2-fpm || true
+else
+	systemctl enable php8.4-fpm || true
+fi
 
 tee "$NGINX_DEFAULT" > /dev/null << 'EOF'
 server {

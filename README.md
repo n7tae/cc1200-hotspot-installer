@@ -22,7 +22,7 @@ sudo ./cc1200-hotspot-installer.sh
 ## Features
 
 - Verifies root and OS requirements
-- Ensures it's run on a **fresh install** of Raspberry Pi OS Lite (Bookworm, 64-bit)
+- Ensures it's run on a **fresh install** of Raspberry Pi OS Lite (Bookworm or Pixie, 64-bit)
 - Configures UART for GPIO access
 - Prompts for required reboots after system update and boot option changes
 - Installs all necessary packages via APT
@@ -43,6 +43,7 @@ This script was tested on:
 
 - **Raspberry Pi Zero 2 W**
 - **Raspberry Pi OS Lite (64-bit), Bookworm (Debian 12-based)**
+- **Raspberry Pi OS Lite (64-bit), Pixie (Debian 13-based)**
 
 Other Pi models or OS versions may work but are **not officially supported**.
 
@@ -50,7 +51,7 @@ Other Pi models or OS versions may work but are **not officially supported**.
 
 ## Prerequisites
 
-- Fresh install of Raspberry Pi OS Bookworm **Lite (64-bit)**
+- Fresh install of Raspberry Pi OS Bookworm or Pixie **Lite (64-bit)**
 - Raspberry Pi with internet access
 - CC1200 HAT connected
 - Run the script as **root**
