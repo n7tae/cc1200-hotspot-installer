@@ -290,7 +290,18 @@ systemctl restart nginx
 # 11. Install M17 Gateway and configure links
 echo "📥 Downloading and installing m17-gateway..."
 curl -s https://api.github.com/repos/jancona/m17/releases/latest | jq -r '.assets[].browser_download_url | select(. | contains("_arm64.deb") and contains("m17-gateway"))' | xargs -I {} curl -L -o /tmp/m17-gateway.deb {}
-dpkg -i /tmp/m17-gateway.deb
+counter=0
+while true; do
+	if dpkg -i /tmp/m17-gateway.deb; then 
+		break
+	fi
+	((counter++))
+	if [$counter -ge 5]; then
+		echo "❌ Could not install m17-gateway!"
+		exit 1
+	fi
+	sleep 2
+done
 
 echo "👥 Adding 'www-data' to 'm17-gateway-control' group..."
 usermod -aG m17-gateway-control www-data
