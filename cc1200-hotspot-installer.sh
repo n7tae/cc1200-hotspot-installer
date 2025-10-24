@@ -256,9 +256,9 @@ update_hostfile
 echo "🛠️  Configuring nginx and PHP..."
 systemctl enable nginx
 if grep -q "bookworm" /etc/os-release; then
-	systemctl enable php8.2-fpm || true
+	systemctl enable php8.2-fpm
 else
-	systemctl enable php8.4-fpm || true
+	systemctl enable php8.4-fpm
 fi
 
 tee "$NGINX_DEFAULT" > /dev/null << 'EOF'
